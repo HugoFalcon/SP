@@ -20,7 +20,7 @@ else:
 
 # 3. Crear el LLM
 from langchain_openai import ChatOpenAI
-llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo')
+llm = ChatOpenAI(temperature=0, model_name='gpt-4')
 
 # 4. Crear la cadena
 from langchain.chains import create_sql_query_chain
