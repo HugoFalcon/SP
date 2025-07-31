@@ -4,7 +4,7 @@ import b_backend
 import streamlit as st
 
 st.title("BOT de preguntas a la base de datos")
-st.write("Puedes hacerme a mi todas las preguntas de la tabla de ventas")
+st.write("Te sugiero iniciar prguntandome MUESTRAME DE MANERA TABULAR LOS PRIMERROS 3 REGISTROS para que veas los campos disponibles y puedas hacer las consultas con los filtros que ocupes.")
 
 # Inicializar el estado de la sesión
 if 'mensajes' not in st.session_state:
