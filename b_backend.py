@@ -4,63 +4,125 @@ import streamlit as st
 import os
 import requests
 import gdown
+import time
 
 # Función para descargar la base de datos desde Google Drive
-@st.cache_resource
+@st.cache_data(ttl=3600)  # Cache por 1 hora
 def download_database():
     """Descarga la base de datos desde Google Drive si no existe localmente"""
     db_path = "ecommerce.db"
     
-    # Si la base de datos ya existe, no la descargamos de nuevo
+    # Si la base de datos ya existe localmente, verificar su tamaño
     if os.path.exists(db_path):
-        return db_path
+        file_size = os.path.getsize(db_path)
+        if file_size > 1000:  # Si el archivo tiene más de 1KB, asumimos que está completo
+            return db_path
+        else:
+            # Si el archivo existe pero está vacío o corrupto, lo eliminamos
+            os.remove(db_path)
     
     try:
         # Extraer el ID del archivo de Google Drive
-        # De tu URL: https://drive.google.com/file/d/1YDmVjf5Nrz9Llgtka3KQMBUKwsnSF5vk/view?usp=drive_link
         file_id = "1YDmVjf5Nrz9Llgtka3KQMBUKwsnSF5vk"
         
-        # URL directa para descargar desde Google Drive
-        url = f"https://drive.google.com/uc?id={file_id}"
+        # Crear un contenedor para mostrar el progreso
+        progress_container = st.container()
         
-        # Mostrar mensaje de descarga
-        with st.spinner("Descargando base de datos... Esto puede tomar unos momentos la primera vez."):
-            # Usar gdown para descargar el archivo
-            gdown.download(url, db_path, quiet=False)
-        
-        st.success("Base de datos descargada exitosamente!")
-        return db_path
-        
-    except Exception as e:
-        st.error(f"Error al descargar la base de datos: {e}")
-        # Intentar método alternativo
-        try:
-            download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-            response = requests.get(download_url)
+        with progress_container:
+            st.info("🔄 Descargando base de datos... Esto puede tomar unos momentos la primera vez.")
+            progress_bar = st.progress(0)
+            status_text = st.empty()
             
-            if response.status_code == 200:
-                with open(db_path, 'wb') as f:
-                    f.write(response.content)
-                st.success("Base de datos descargada exitosamente (método alternativo)!")
-                return db_path
-            else:
-                st.error(f"Error al descargar: Status code {response.status_code}")
-                return None
+            # Intentar descargar con gdown
+            try:
+                # URL directa para descargar desde Google Drive
+                url = f"https://drive.google.com/uc?id={file_id}"
                 
-        except Exception as e2:
-            st.error(f"Error en descarga alternativa: {e2}")
-            return None
+                # Descargar con gdown mostrando progreso
+                status_text.text("Conectando con Google Drive...")
+                progress_bar.progress(10)
+                
+                # Usar gdown con quiet=True para evitar conflictos con Streamlit
+                output = gdown.download(url, db_path, quiet=True)
+                
+                if output:
+                    progress_bar.progress(100)
+                    status_text.text("✅ Base de datos descargada exitosamente!")
+                    time.sleep(1)  # Dar tiempo para ver el mensaje
+                    return db_path
+                else:
+                    raise Exception("gdown no pudo descargar el archivo")
+                    
+            except Exception as e:
+                # Si gdown falla, intentar método alternativo
+                status_text.text("Intentando método alternativo de descarga...")
+                progress_bar.progress(50)
+                
+                # URLs alternativas para intentar
+                urls_to_try = [
+                    f"https://drive.google.com/uc?export=download&id={file_id}",
+                    f"https://drive.google.com/uc?export=download&confirm=t&id={file_id}"
+                ]
+                
+                for url in urls_to_try:
+                    try:
+                        response = requests.get(url, stream=True, timeout=300)  # 5 minutos de timeout
+                        
+                        if response.status_code == 200:
+                            # Descargar en chunks para archivos grandes
+                            total_size = int(response.headers.get('content-length', 0))
+                            block_size = 8192
+                            downloaded = 0
+                            
+                            with open(db_path, 'wb') as f:
+                                for chunk in response.iter_content(block_size):
+                                    if chunk:
+                                        f.write(chunk)
+                                        downloaded += len(chunk)
+                                        if total_size > 0:
+                                            progress = int(50 + (downloaded / total_size) * 50)
+                                            progress_bar.progress(progress)
+                                            status_text.text(f"Descargando... {downloaded / 1024 / 1024:.1f} MB")
+                            
+                            progress_bar.progress(100)
+                            status_text.text("✅ Base de datos descargada exitosamente!")
+                            time.sleep(1)
+                            return db_path
+                            
+                    except Exception as download_error:
+                        continue
+                
+                # Si todos los métodos fallan
+                raise Exception("No se pudo descargar el archivo con ningún método")
+                
+    except Exception as e:
+        st.error(f"❌ Error al descargar la base de datos: {str(e)}")
+        st.error("Por favor, verifica que el enlace de Google Drive sea público.")
+        return None
+    finally:
+        # Limpiar los widgets de progreso
+        if 'progress_container' in locals():
+            progress_container.empty()
 
-# Configurar la base de datos
-try:
-    db_path = download_database()
-    if db_path:
-        db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
-    else:
-        db = None
-except Exception as e:
-    st.error(f"Error al cargar la base de datos: {e}")
-    db = None
+# Variable global para almacenar la conexión a la base de datos
+db = None
+
+# Función para inicializar la base de datos
+@st.cache_resource
+def init_database():
+    """Inicializa la conexión a la base de datos"""
+    try:
+        db_path = download_database()
+        if db_path and os.path.exists(db_path):
+            return SQLDatabase.from_uri(f"sqlite:///{db_path}")
+        else:
+            return None
+    except Exception as e:
+        st.error(f"Error al inicializar la base de datos: {e}")
+        return None
+
+# Inicializar la base de datos
+db = init_database()
 
 # 2. Importar las APIs
 # Configurar OpenAI API Key desde Streamlit secrets
@@ -81,58 +143,64 @@ from langchain_openai import ChatOpenAI
 llm = None
 chain = None
 
+@st.cache_resource
 def init_chain():
     """Inicializa la cadena solo cuando se necesita"""
-    global llm, chain
+    global db
     
-    if llm is None:
-        try:
-            # Crear LLM con configuración explícita
-            llm = ChatOpenAI(
-                temperature=0,
-                model_name='gpt-3.5-turbo',  # Usar gpt-3.5-turbo que es más estable
-                request_timeout=30,
-                max_retries=2
-            )
-            
-            # 4. Crear la cadena
-            from langchain.chains import create_sql_query_chain
-            from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
-            from operator import itemgetter
-            from langchain_core.output_parsers import StrOutputParser
-            from langchain_core.prompts import PromptTemplate
-            from langchain_core.runnables import RunnablePassthrough
-            
-            # Crear la cadena de consulta SQL
-            query_chain = create_sql_query_chain(llm, db)
-            execute_query = QuerySQLDataBaseTool(db=db)
-            
-            # Crear un prompt para procesar la respuesta
-            answer_prompt = PromptTemplate.from_template(
-                """Dada la siguiente pregunta del usuario, la consulta SQL correspondiente y el resultado SQL, 
-                formula una respuesta en español.
+    # Asegurar que tenemos la base de datos
+    if db is None:
+        db = init_database()
+        if db is None:
+            return None
+    
+    try:
+        # Crear LLM con configuración explícita
+        llm = ChatOpenAI(
+            temperature=0,
+            model_name='gpt-3.5-turbo',
+            request_timeout=30,
+            max_retries=2
+        )
+        
+        # 4. Crear la cadena
+        from langchain.chains import create_sql_query_chain
+        from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
+        from operator import itemgetter
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.prompts import PromptTemplate
+        from langchain_core.runnables import RunnablePassthrough
+        
+        # Crear la cadena de consulta SQL
+        query_chain = create_sql_query_chain(llm, db)
+        execute_query = QuerySQLDataBaseTool(db=db)
+        
+        # Crear un prompt para procesar la respuesta
+        answer_prompt = PromptTemplate.from_template(
+            """Dada la siguiente pregunta del usuario, la consulta SQL correspondiente y el resultado SQL, 
+            formula una respuesta en español.
 
-                Pregunta: {question}
-                Consulta SQL: {query}
-                Resultado SQL: {result}
-                Respuesta:"""
+            Pregunta: {question}
+            Consulta SQL: {query}
+            Resultado SQL: {result}
+            Respuesta:"""
+        )
+        
+        # Crear la cadena completa
+        chain = (
+            RunnablePassthrough.assign(query=query_chain).assign(
+                result=itemgetter("query") | execute_query
             )
-            
-            # Crear la cadena completa
-            chain = (
-                RunnablePassthrough.assign(query=query_chain).assign(
-                    result=itemgetter("query") | execute_query
-                )
-                | answer_prompt
-                | llm
-                | StrOutputParser()
-            )
-            
-        except Exception as e:
-            st.error(f"Error al inicializar: {str(e)}")
-            return False
-    
-    return True
+            | answer_prompt
+            | llm
+            | StrOutputParser()
+        )
+        
+        return chain
+        
+    except Exception as e:
+        st.error(f"Error al inicializar la cadena: {str(e)}")
+        return None
 
 # 5. Formato personalizado de respuesta
 formato = """
@@ -152,16 +220,15 @@ def consulta(input_usuario):
         if "OPENAI_API_KEY" not in os.environ:
             return "Error: No se ha configurado la API Key de OpenAI. Ve a Settings → Secrets en Streamlit Cloud."
         
-        # Inicializar la cadena si no está lista
-        if not init_chain():
-            return "Error: No se pudo inicializar el sistema."
+        # Obtener o inicializar la cadena
+        chain = init_chain()
+        if chain is None:
+            return "Error: No se pudo inicializar el sistema. Por favor, recarga la página."
         
-        # Verificar que tenemos la base de datos
-        if db is None:
-            return "Error: No se pudo cargar la base de datos."
+        # Usar la cadena con timeout
+        with st.spinner("Procesando tu consulta..."):
+            resultado = chain.invoke({"question": input_usuario})
         
-        # Usar la cadena
-        resultado = chain.invoke({"question": input_usuario})
         return resultado
         
     except Exception as e:
