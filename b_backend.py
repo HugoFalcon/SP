@@ -2,10 +2,62 @@
 from langchain_community.utilities import SQLDatabase
 import streamlit as st
 import os
+import requests
+import gdown
+
+# Función para descargar la base de datos desde Google Drive
+@st.cache_resource
+def download_database():
+    """Descarga la base de datos desde Google Drive si no existe localmente"""
+    db_path = "ecommerce.db"
+    
+    # Si la base de datos ya existe, no la descargamos de nuevo
+    if os.path.exists(db_path):
+        return db_path
+    
+    try:
+        # Extraer el ID del archivo de Google Drive
+        # De tu URL: https://drive.google.com/file/d/1YDmVjf5Nrz9Llgtka3KQMBUKwsnSF5vk/view?usp=drive_link
+        file_id = "1YDmVjf5Nrz9Llgtka3KQMBUKwsnSF5vk"
+        
+        # URL directa para descargar desde Google Drive
+        url = f"https://drive.google.com/uc?id={file_id}"
+        
+        # Mostrar mensaje de descarga
+        with st.spinner("Descargando base de datos... Esto puede tomar unos momentos la primera vez."):
+            # Usar gdown para descargar el archivo
+            gdown.download(url, db_path, quiet=False)
+        
+        st.success("Base de datos descargada exitosamente!")
+        return db_path
+        
+    except Exception as e:
+        st.error(f"Error al descargar la base de datos: {e}")
+        # Intentar método alternativo
+        try:
+            download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+            response = requests.get(download_url)
+            
+            if response.status_code == 200:
+                with open(db_path, 'wb') as f:
+                    f.write(response.content)
+                st.success("Base de datos descargada exitosamente (método alternativo)!")
+                return db_path
+            else:
+                st.error(f"Error al descargar: Status code {response.status_code}")
+                return None
+                
+        except Exception as e2:
+            st.error(f"Error en descarga alternativa: {e2}")
+            return None
 
 # Configurar la base de datos
 try:
-    db = SQLDatabase.from_uri("sqlite:///ecommerce.db")
+    db_path = download_database()
+    if db_path:
+        db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
+    else:
+        db = None
 except Exception as e:
     st.error(f"Error al cargar la base de datos: {e}")
     db = None
