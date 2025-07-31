@@ -1,1 +1,29 @@
 
+[server]
+maxUploadSize = 500
+maxMessageSize = 500
+
+[browser]
+serverAddress = "0.0.0.0"
+serverPort = 8501
+
+[runner]
+fastReruns = true
+
+[client]
+showErrorDetails = true
+
+# Aumentar timeouts
+[server]
+enableCORS = false
+enableXsrfProtection = true
+maxUploadSize = 500
+enableWebsocketCompression = false
+
+# Configuración para evitar timeouts en descargas largas
+[runner]
+magicEnabled = true
+installTracer = false
+fixMatplotlib = true
+postScriptGC = true
+fastReruns = true
