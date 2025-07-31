@@ -1,3 +1,9 @@
+# Base de datos
+*.db
+*.sqlite
+*.sqlite3
+ecommerce.db
+
 # Python
 __pycache__/
 *.py[cod]
@@ -9,10 +15,12 @@ venv/
 ENV/
 .venv
 
-# Secrets y configuración local
-a_env_vars.py
-.env
+# Streamlit
 .streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
@@ -20,12 +28,9 @@ a_env_vars.py
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
-
 # Logs
 *.log
 
-# Local database (si no quieres subirla)
-# ecommerce.db
+# Environment variables
+.env
+a_env_vars.py
