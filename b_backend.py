@@ -5,6 +5,7 @@ import os
 import requests
 import gdown
 import time
+import sqlite3
 
 # Función para descargar la base de datos desde Google Drive
 @st.cache_data(ttl=3600)  # Cache por 1 hora
@@ -58,23 +59,55 @@ def download_database():
                 status_text.text("Intentando método alternativo de descarga...")
                 progress_bar.progress(50)
                 
-                # URLs alternativas para intentar
-                urls_to_try = [
-                    f"https://drive.google.com/uc?export=download&id={file_id}",
-                    f"https://drive.google.com/uc?export=download&confirm=t&id={file_id}"
-                ]
+                # Primero, obtener el token de confirmación si es necesario
+                session = requests.Session()
+                response = session.get(f"https://drive.google.com/uc?export=download&id={file_id}", stream=True)
                 
-                for url in urls_to_try:
+                # Buscar token de confirmación en las cookies
+                token = None
+                for key, value in response.cookies.items():
+                    if key.startswith('download_warning'):
+                        token = value
+                        break
+                
+                # URLs alternativas para intentar
+                if token:
+                    urls_to_try = [
+                        f"https://drive.google.com/uc?export=download&confirm={token}&id={file_id}"
+                    ]
+                else:
+                    urls_to_try = [
+                        f"https://drive.google.com/uc?export=download&id={file_id}",
+                        f"https://docs.google.com/uc?export=download&id={file_id}"
+                    ]
+                
+                for url_idx, url in enumerate(urls_to_try):
                     try:
-                        response = requests.get(url, stream=True, timeout=300)  # 5 minutos de timeout
+                        status_text.text(f"Intentando descarga método {url_idx + 1}...")
+                        
+                        if url_idx == 0 and token:
+                            # Usar la sesión existente si tenemos token
+                            response = session.get(url, stream=True, timeout=300)
+                        else:
+                            response = requests.get(url, stream=True, timeout=300)
                         
                         if response.status_code == 200:
+                            # Verificar el contenido - Google Drive a veces devuelve HTML en lugar del archivo
+                            content_type = response.headers.get('content-type', '')
+                            if 'text/html' in content_type:
+                                # Si recibimos HTML, probablemente es una página de confirmación
+                                status_text.text("Archivo requiere confirmación adicional...")
+                                continue
+                            
                             # Descargar en chunks para archivos grandes
                             total_size = int(response.headers.get('content-length', 0))
                             block_size = 8192
                             downloaded = 0
                             
-                            with open(db_path, 'wb') as f:
+                            # Usar un archivo temporal primero
+                            temp_path = db_path + ".tmp"
+                            
+                            with open(temp_path, 'wb') as f:
                                 for chunk in response.iter_content(block_size):
                                     if chunk:
                                         f.write(chunk)
@@ -84,10 +117,30 @@ def download_database():
                                             progress_bar.progress(progress)
                                             status_text.text(f"Descargando... {downloaded / 1024 / 1024:.1f} MB")
                             
-                            progress_bar.progress(100)
-                            status_text.text("✅ Base de datos descargada exitosamente!")
-                            time.sleep(1)
-                            return db_path
+                            # Verificar que el archivo descargado es una base de datos SQLite válida
+                            status_text.text("Verificando integridad de la base de datos...")
+                            
+                            # Intentar abrir el archivo como SQLite
+                            import sqlite3
+                            try:
+                                conn = sqlite3.connect(temp_path)
+                                cursor = conn.cursor()
+                                # Intentar una consulta simple
+                                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1")
+                                cursor.close()
+                                conn.close()
+                                
+                                # Si llegamos aquí, el archivo es válido
+                                os.rename(temp_path, db_path)
+                                progress_bar.progress(100)
+                                status_text.text("✅ Base de datos descargada y verificada exitosamente!")
+                                time.sleep(1)
+                                return db_path
+                                
+                            except sqlite3.DatabaseError as e:
+                                os.remove(temp_path)
+                                status_text.text(f"❌ El archivo descargado no es una base de datos válida")
+                                continue
                             
                     except Exception as download_error:
                         continue
