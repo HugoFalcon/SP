@@ -3,7 +3,7 @@
 import b_backend
 import streamlit as st
 
-st.title("App de preguntas a la base de datos")
+st.title("BOT de preguntas a la base de datos")
 st.write("Puedes hacerme a mi todas las preguntas de la tabla de ventas")
 
 # Inicializar el estado de la sesión
