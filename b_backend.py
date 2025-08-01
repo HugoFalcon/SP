@@ -212,7 +212,8 @@ def init_chain():
         llm = ChatOpenAI(
             temperature=0,
 #            model_name='gpt-3.5-turbo',
-            model_name='gpt-4',
+#            model_name='gpt-4',
+            model_name='GPT‑4o mini',           
             request_timeout=30,
             max_retries=2
         )
@@ -257,12 +258,20 @@ def init_chain():
         return None
 
 # 5. Formato personalizado de respuesta
+
+
 formato = """
+
 Dada una pregunta del usuario:
-1. crea una consulta de sqlite3
-2. revisa los resultados
-3. devuelve el dato
-4. si tienes que hacer alguna aclaración o devolver cualquier texto que sea siempre en español
+           
+1. Genera SOLO la consulta SQL, sin explicaciones adicionales
+2. La consulta debe ser válida para SQLite3
+3. Usa los nombres exactos de tablas y columnas
+4. Si necesitas fechas, usa el formato YYYY-MM-DD
+5. Para búsquedas de texto, usa LIKE con % para coincidencias parciales
+6. devuelve el dato
+7. si tienes que hacer alguna aclaración o devolver cualquier texto que sea siempre en español
+
 
 Pregunta: {question}
 """
