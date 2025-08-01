@@ -26,7 +26,7 @@ for i, ejemplo in enumerate(ejemplos, 1):
 
 st.write("")  # Línea en blanco
 
-st.info("🔎 **Consulta individual:** Si quieres ver los campos de un socio en particular, solicítalo así: DAME EL REGISTRO CON NÚMERO DE SOCIO ######")
+st.info("🔎 **Consulta individual:** Si quieres ver los campos de un socio en particular, solicítalo así: MUESTRAME EL REGISTRO CON NÚMERO DE SOCIO ###### CON TODOS SUS CAMPOS TAL CUAL ESTAN EN LA TABLA DE SOCIOS")
 
 
 
