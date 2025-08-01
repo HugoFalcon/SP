@@ -3,7 +3,7 @@
 import b_backend
 import streamlit as st
 
-st.title("BOT de preguntas a la base de datos")
+st.title("BOT de preguntas a la tabla de socios")
 st.write("Te sugiero iniciar prguntandome ¿CUALES SON LOS NOMBRES DE LAS COLUMNAS DE LA TABLA SOCIOS?. Otros ejemplos interesantes de consultas utiles son: a) MUESTRAME LOS 5 NUMEROS DE SOCIOS CON MAYOR SALDO EN DPFs, b) ¿CUÁNTOS SOCIOS TIENEN TARJETA DE CREDITO EN LA REGION ORIENTE?, c) DAME LA SUMA DE SALDO DE AHORRO DE SOCIOS QUE ESTAN EN CARTERA VENCIDA, d) AGRUPAME LAS SUMAS DE RESPONSABILIDAD TOTAL DE LOS CREDITOS ACTIVOS POR REGIONES, e)¿QUIEN ES EL SOCIO QUE TIENE EL MAYOR BC SCORE?. Si quieres ver los campos de un socio en particular solicitalo así DAME EL REGISTRO DEL SOCIO ###")
 
 # Inicializar el estado de la sesión
