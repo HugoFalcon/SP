@@ -3,8 +3,32 @@
 import b_backend
 import streamlit as st
 
-st.title("BOT de preguntas a la tabla de socios")
-st.write("Te sugiero iniciar prguntandome ¿CUALES SON LOS NOMBRES DE LAS COLUMNAS DE LA TABLA SOCIOS?. Otros ejemplos interesantes de consultas utiles son: a) MUESTRAME LOS 5 NUMEROS DE SOCIOS CON MAYOR SALDO EN DPFs, b) ¿CUÁNTOS SOCIOS TIENEN TARJETA DE CREDITO EN LA REGION ORIENTE?, c) DAME LA SUMA DE SALDO DE AHORRO DE SOCIOS QUE ESTAN EN CARTERA VENCIDA, d) AGRUPAME LAS SUMAS DE RESPONSABILIDAD TOTAL DE LOS CREDITOS ACTIVOS POR REGIONES, e)¿QUIEN ES EL SOCIO QUE TIENE EL MAYOR BC SCORE?, f) ENCUENTRA 3 REGISTROS DE SOCIOS QUE PERTENEZCAN A CUCURSAL CENTRO QUE NO TENGAN TARJETA DE CREDITO Y QUE TENGAN SCORE MAYOR A 700; MUESTRAME EL RESULTADO CON LAS COLUMNAS NUMERO DE SOCIO Y SCORE. Si quieres ver los campos de un socio en particular solicitalo así DAME EL REGISTRO CON NUMERO DE SOCIO ######")
+st.title("🤖 BOT de preguntas a la tabla de socios")
+
+st.write("📝 **Te sugiero iniciar preguntándome:**")
+st.write("¿CUÁLES SON LOS NOMBRES DE LAS COLUMNAS DE LA TABLA SOCIOS?")
+
+st.write("")  # Línea en blanco
+
+st.write("💡 **Ejemplos de consultas útiles:**")
+
+ejemplos = [
+    "💰 MUÉSTRAME LOS 5 NÚMEROS DE SOCIOS CON MAYOR SALDO EN DPFs",
+    "💳 ¿CUÁNTOS SOCIOS TIENEN TARJETA DE CRÉDITO EN LA REGIÓN ORIENTE?",
+    "📊 DAME LA SUMA DE SALDO DE AHORRO DE SOCIOS QUE ESTÁN EN CARTERA VENCIDA",
+    "🌎 AGRÚPAME LAS SUMAS DE RESPONSABILIDAD TOTAL DE LOS CRÉDITOS ACTIVOS POR REGIONES",
+    "⭐ ¿QUIÉN ES EL SOCIO QUE TIENE EL MAYOR BC SCORE?",
+    "🔍 ENCUENTRA 3 REGISTROS DE SOCIOS QUE PERTENEZCAN A SUCURSAL CENTRO QUE NO TENGAN TARJETA DE CRÉDITO Y QUE TENGAN SCORE MAYOR A 700; MUÉSTRAME EL RESULTADO CON LAS COLUMNAS NÚMERO DE SOCIO Y SCORE"
+]
+
+for i, ejemplo in enumerate(ejemplos, 1):
+    st.write(f"{i}. {ejemplo}")
+
+st.write("")  # Línea en blanco
+
+st.info("🔎 **Consulta individual:** Si quieres ver los campos de un socio en particular, solicítalo así: DAME EL REGISTRO CON NÚMERO DE SOCIO ######")
+
+
 
 # Inicializar el estado de la sesión
 if 'mensajes' not in st.session_state:
