@@ -212,8 +212,8 @@ def init_chain():
         llm = ChatOpenAI(
             temperature=0,
 #            model_name='gpt-3.5-turbo',
-#            model_name='gpt-4',
-            model="gpt-5",   # Aquí cambias de "gpt-4" a "gpt-5"
+            model_name='gpt-4',
+#            model="gpt-5",   # Aquí cambias de "gpt-4" a "gpt-5"
 #            model_name='GPT‑4o mini',           
             request_timeout=30,
             max_retries=2
@@ -297,4 +297,5 @@ def consulta(input_usuario):
         
     except Exception as e:
         return f"Error al procesar la consulta: {str(e)}"
+
 
