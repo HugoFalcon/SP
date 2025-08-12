@@ -3,7 +3,7 @@
 import b_backend
 import streamlit as st
 
-st.title("🤖 BOT para contestar PREGUNTAS DE NEGOCIO de la tabla de socios, NO ES PARA GENERAR LISTADOS")
+st.title("🤖 BOT para contestar PREGUNTAS DE NEGOCIO de la tabla de socios")
 
 st.write("📝 **Te sugiero iniciar preguntándome:**")
 st.write("¿CUÁLES SON LOS NOMBRES DE LAS COLUMNAS DE LA TABLA SOCIOS?")
@@ -65,4 +65,5 @@ if prompt := st.chat_input("¿En qué te puedo ayudar?"):
 if st.button("Nueva conversación"):
     st.session_state.mensajes = []
     st.rerun()
+
 
